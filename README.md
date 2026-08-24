@@ -94,6 +94,15 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
 
 ---
 
+## Technical Examples & Hero Demos
+
+| Case | Java Example | Launcher | Description |
+|---|---|---|---|
+| **Multi-Agent Blackboard Coordination** | [Demo.java](examples/Demo/src/main/java/fastaistate/demo/Demo.java) | `run-demo.bat` | Reactive listeners, atomic CAS updates across agents, and binary state serialization. |
+| **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastaistate/benchmark/Benchmark.java) | `run-benchmark.bat` | Lock-free CAS throughput, concurrent blackboard reads/writes, and snapshot serialization. |
+
+---
+
 ## Installation
 
 ### Option 1: Maven (JitPack)
