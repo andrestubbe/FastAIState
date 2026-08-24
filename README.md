@@ -10,7 +10,7 @@
 
 **⚡ High-performance lock-free shared blackboard memory, delta revision tracking, and binary state snapshot engine for multi-agent workflows.**
 
-**FastAIState** provides a shared blackboard coordination memory for multi-agent execution graphs, automated task pipelines, and tool execution environments. It eliminates prompt context stuffing by offering a lock-free, thread-safe, observable key-value store with atomic CAS (Compare-And-Swap), delta tracking, and zero-allocation binary serialization via **[FastBinary](https://github.com/andrestubbe/FastBinary)**.
+**FastAIState** provides a shared blackboard coordination memory for multi-agent execution graphs, automated task pipelines, and tool execution environments. It eliminates prompt context stuffing by offering a lock-free, thread-safe, observable key-value store with atomic CAS (Compare-And-Swap), delta tracking, and zero-allocation binary serialization via **[FastFileFormat](https://github.com/andrestubbe/FastFileFormat)** & **[FastBinary](https://github.com/andrestubbe/FastBinary)**.
 
 ---
 
@@ -35,7 +35,7 @@ public class Example {
         long ver = blackboard.getEntry("agent_status").version();
         blackboard.compareAndSet("agent_status", ver, "EXECUTING");
 
-        // 4. Compact Binary Snapshot
+        // 4. Compact FastFileFormat Binary Snapshot
         byte[] binary = FastStateSerializer.toBinary(blackboard.snapshot());
         FastBlackboard restored = FastStateSerializer.fromBinary(binary);
     }
@@ -49,8 +49,8 @@ public class Example {
 - **⚡ Lock-Free Concurrency** — Atomic CAS (`compareAndSet`) updates with monotonically increasing generation revisions.
 - **🔄 Delta & Revision Tracking** — Microsecond delta extraction (`getDeltasSince`) to stream state diffs across distributed workers.
 - **📡 Reactive State Listeners** — Key-specific and global change listeners (`StateChangeListener`) for event-driven orchestration.
-- **💾 FastBinary State Snapshots** — High-density binary state serialization (`FastStateSerializer`) powered by LEB128 VarInts.
-- **🌐 Zero Dependencies** — Native-speed pure Java 17+ architecture backed by `FastCore` and `FastBinary`.
+- **💾 FastFileFormat State Snapshots** — Dual-format state serialization (`FastStateSerializer`) with standard 12-byte header and VarInt streams.
+- **🌐 Zero Dependencies** — Native-speed pure Java 17+ architecture backed by `FastCore`, `FastBinary`, and `FastFileFormat`.
 
 ---
 
@@ -123,6 +123,11 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
     </dependency>
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
+        <artifactId>FastFileFormat</artifactId>
+        <version>0.1.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
         <artifactId>FastBinary</artifactId>
         <version>0.1.0</version>
     </dependency>
@@ -143,6 +148,7 @@ repositories {
 
 dependencies {
     implementation 'com.github.andrestubbe:FastAIState:0.1.0'
+    implementation 'com.github.andrestubbe:FastFileFormat:0.1.0'
     implementation 'com.github.andrestubbe:FastBinary:0.1.0'
     implementation 'com.github.andrestubbe:fastcore:0.1.0'
 }
@@ -153,8 +159,9 @@ dependencies {
 Download the latest JARs directly to add them to your classpath:
 
 1. 🧠 **[FastAIState-0.1.0.jar](https://github.com/andrestubbe/FastAIState/releases/download/0.1.0/FastAIState-0.1.0.jar)** (Shared Blackboard Engine)
-2. ⚡ **[FastBinary-0.1.0.jar](https://github.com/andrestubbe/FastBinary/releases/download/0.1.0/FastBinary-0.1.0.jar)** (VarInt & Binary Packing)
-3. ⚙️ **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (Foundation Library)
+2. 📄 **[FastFileFormat-0.1.0.jar](https://github.com/andrestubbe/FastFileFormat/releases/download/0.1.0/FastFileFormat-0.1.0.jar)** (Dual Binary & Text File Format)
+3. ⚡ **[FastBinary-0.1.0.jar](https://github.com/andrestubbe/FastBinary/releases/download/0.1.0/FastBinary-0.1.0.jar)** (VarInt & Binary Packing)
+4. ⚙️ **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (Foundation Library)
 
 ---
 
@@ -189,6 +196,7 @@ MIT License. See [LICENSE](LICENSE) file for details.
 - [FastAI](https://github.com/andrestubbe/FastAI) — Unified AI client interface for Java
 - [FastAIAgent](https://github.com/andrestubbe/FastAIAgent) — Autonomous agent loop, intent-graphs, and tool execution
 - [FastAIRuntime](https://github.com/andrestubbe/FastAIRuntime) — Sandboxed process runner and FastAIEventBus pipeline
+- [FastFileFormat](https://github.com/andrestubbe/FastFileFormat) — Universal dual-format binary & text document engine
 - [FastBinary](https://github.com/andrestubbe/FastBinary) — Zero-bloat VarInt encoding and bitstream packing
 - [FastCore](https://github.com/andrestubbe/FastCore) — Unified JNI loader and platform abstraction
 

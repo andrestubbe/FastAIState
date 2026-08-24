@@ -1,95 +1,95 @@
 package fastaistate;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import fastfileformat.BinaryHeader;
+import fastfileformat.BinaryReader;
+import fastfileformat.BinaryWriter;
+import fastfileformat.FastFileFormat;
+
 import java.util.Map;
 
 /**
- * High-speed binary & JSON serialization for persistent FastAIState snapshots.
+ * High-speed dual-format serialization for persistent FastAIState snapshots using FastFileFormat.
  */
 public final class FastStateSerializer {
-    private static final int MAGIC = 0x46415354; // 'FAST'
-    private static final short VERSION = 1;
+    /**
+     * Standard FastJava AI State payload type identifier (0x0002).
+     */
+    public static final short PAYLOAD_TYPE_STATE = 0x0002;
 
     private FastStateSerializer() {}
 
     /**
-     * Serializes a snapshot to raw binary bytes using FastBinary primitives.
+     * Serializes a snapshot to raw binary bytes using FastFileFormat.
+     *
+     * @param snapshot The state snapshot.
+     * @return Compact binary byte array with 12-byte FastFileFormat header.
      */
     public static byte[] toBinary(StateSnapshot snapshot) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
-        try (DataOutputStream dos = new DataOutputStream(baos)) {
-            dos.writeInt(MAGIC);
-            dos.writeShort(VERSION);
+        BinaryWriter payloadWriter = FastFileFormat.binaryWriter(256);
 
-            byte[] scopeBytes = snapshot.scopeId().getBytes(StandardCharsets.UTF_8);
-            fastbinary.VarInt.write(scopeBytes.length, dos);
-            dos.write(scopeBytes);
-            dos.writeLong(snapshot.snapshotVersion());
+        payloadWriter.writeString(snapshot.scopeId());
+        payloadWriter.writeLong(snapshot.snapshotVersion());
 
-            Map<String, StateEntry> entries = snapshot.entries();
-            fastbinary.VarInt.write(entries.size(), dos);
+        Map<String, StateEntry> entries = snapshot.entries();
+        payloadWriter.writeVarInt(entries.size());
 
-            for (StateEntry entry : entries.values()) {
-                byte[] keyBytes = entry.key().getBytes(StandardCharsets.UTF_8);
-                fastbinary.VarInt.write(keyBytes.length, dos);
-                dos.write(keyBytes);
-                dos.writeLong(entry.version());
-                dos.writeLong(entry.timestamp());
-
-                String strVal = entry.value() != null ? entry.value().toString() : "";
-                byte[] valBytes = strVal.getBytes(StandardCharsets.UTF_8);
-                fastbinary.VarInt.write(valBytes.length, dos);
-                dos.write(valBytes);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize FastAIState snapshot", e);
+        for (StateEntry entry : entries.values()) {
+            payloadWriter.writeString(entry.key());
+            payloadWriter.writeLong(entry.version());
+            payloadWriter.writeLong(entry.timestamp());
+            String strVal = entry.value() != null ? entry.value().toString() : "";
+            payloadWriter.writeString(strVal);
         }
-        return baos.toByteArray();
+
+        byte[] payload = payloadWriter.toByteArray();
+
+        BinaryHeader header = new BinaryHeader(
+                FastFileFormat.DEFAULT_MAGIC,
+                FastFileFormat.DEFAULT_VERSION,
+                PAYLOAD_TYPE_STATE,
+                payload.length
+        );
+
+        BinaryWriter finalWriter = FastFileFormat.binaryWriter(12 + payload.length);
+        finalWriter.writeHeader(
+                FastFileFormat.DEFAULT_MAGIC,
+                FastFileFormat.DEFAULT_VERSION,
+                PAYLOAD_TYPE_STATE,
+                payload.length
+        );
+        finalWriter.writeBytes(payload);
+        return finalWriter.toByteArray();
     }
 
     /**
-     * Deserializes binary state into a FastBlackboard.
+     * Deserializes binary state into a FastBlackboard using FastFileFormat.
+     *
+     * @param bytes Binary payload with FastFileFormat header.
+     * @return Restored FastBlackboard instance.
      */
     public static FastBlackboard fromBinary(byte[] bytes) {
-        try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes))) {
-            int magic = dis.readInt();
-            if (magic != MAGIC) {
-                throw new IllegalArgumentException("Invalid FastAIState binary magic header: " + Integer.toHexString(magic));
-            }
-            short ver = dis.readShort();
-            if (ver != VERSION) {
-                throw new IllegalArgumentException("Unsupported FastAIState version: " + ver);
-            }
+        BinaryReader reader = FastFileFormat.binaryReader(bytes);
+        BinaryHeader header = reader.readHeader();
 
-            int scopeLen = fastbinary.VarInt.readInt(dis);
-            byte[] scopeBuf = new byte[scopeLen];
-            dis.readFully(scopeBuf);
-            String scope = new String(scopeBuf, StandardCharsets.UTF_8);
-
-            long snapshotVer = dis.readLong();
-            int entryCount = fastbinary.VarInt.readInt(dis);
-
-            FastBlackboard blackboard = new FastBlackboard(scope);
-            for (int i = 0; i < entryCount; i++) {
-                int keyLen = fastbinary.VarInt.readInt(dis);
-                byte[] keyBuf = new byte[keyLen];
-                dis.readFully(keyBuf);
-                String key = new String(keyBuf, StandardCharsets.UTF_8);
-
-                long entryVer = dis.readLong();
-                long entryTime = dis.readLong();
-
-                int valLen = fastbinary.VarInt.readInt(dis);
-                byte[] valBuf = new byte[valLen];
-                dis.readFully(valBuf);
-                String valStr = new String(valBuf, StandardCharsets.UTF_8);
-
-                blackboard.set(key, valStr);
-            }
-            return blackboard;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to deserialize FastAIState binary data", e);
+        if (header.getMagic() != FastFileFormat.DEFAULT_MAGIC) {
+            throw new IllegalArgumentException("Invalid FastFileFormat magic header: " + Integer.toHexString(header.getMagic()));
         }
+        if (header.getPayloadType() != PAYLOAD_TYPE_STATE) {
+            throw new IllegalArgumentException("Unexpected payload type for FastAIState: " + header.getPayloadType());
+        }
+
+        String scope = reader.readString();
+        long snapshotVer = reader.readLong();
+        int entryCount = reader.readVarInt();
+
+        FastBlackboard blackboard = new FastBlackboard(scope);
+        for (int i = 0; i < entryCount; i++) {
+            String key = reader.readString();
+            long entryVer = reader.readLong();
+            long entryTime = reader.readLong();
+            String valStr = reader.readString();
+            blackboard.set(key, valStr);
+        }
+        return blackboard;
     }
 }
