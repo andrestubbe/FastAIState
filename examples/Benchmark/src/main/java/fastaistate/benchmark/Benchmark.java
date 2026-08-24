@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 1)
 @Fork(1)
-public class FastAIStateBenchmark {
+public class Benchmark {
 
     private FastBlackboard blackboard;
     private StateSnapshot snapshot;
@@ -30,28 +30,28 @@ public class FastAIStateBenchmark {
         binaryData = FastStateSerializer.toBinary(snapshot);
     }
 
-    @Benchmark
+    @org.openjdk.jmh.annotations.Benchmark
     public Object benchmarkStateRead() {
         return blackboard.get("key_25");
     }
 
-    @Benchmark
+    @org.openjdk.jmh.annotations.Benchmark
     public Object benchmarkStateWrite() {
         return blackboard.set("hot_key", "updated_value");
     }
 
-    @Benchmark
+    @org.openjdk.jmh.annotations.Benchmark
     public Object benchmarkCompareAndSet() {
         long ver = blackboard.getGlobalVersion();
         return blackboard.compareAndSet("hot_key", ver, "cas_value");
     }
 
-    @Benchmark
+    @org.openjdk.jmh.annotations.Benchmark
     public byte[] benchmarkBinarySerialization() {
         return FastStateSerializer.toBinary(snapshot);
     }
 
-    @Benchmark
+    @org.openjdk.jmh.annotations.Benchmark
     public FastBlackboard benchmarkBinaryDeserialization() {
         return FastStateSerializer.fromBinary(binaryData);
     }
