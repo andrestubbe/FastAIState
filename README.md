@@ -14,6 +14,36 @@
 
 ---
 
+## Quick Start
+
+```java
+import fastaistate.*;
+
+public class Example {
+    public static void main(String[] args) {
+        FastBlackboard blackboard = FastAIState.of("workflow-task-1");
+
+        // 1. Reactive listener
+        blackboard.addListener("agent_status", (key, oldVal, newVal) -> {
+            System.out.println("Status changed: " + newVal.value());
+        });
+
+        // 2. Write state
+        blackboard.set("agent_status", "PLANNING");
+
+        // 3. Atomic CAS update
+        long ver = blackboard.getEntry("agent_status").version();
+        blackboard.compareAndSet("agent_status", ver, "EXECUTING");
+
+        // 4. Compact Binary Snapshot
+        byte[] binary = FastStateSerializer.toBinary(blackboard.snapshot());
+        FastBlackboard restored = FastStateSerializer.fromBinary(binary);
+    }
+}
+```
+
+---
+
 ## Key Features
 
 - **⚡ Lock-Free Concurrency** — Atomic CAS (`compareAndSet`) updates with monotonically increasing generation revisions.
@@ -61,36 +91,6 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
 | `blackboard.getDeltasSince(version)` | Returns list of state entries modified after given revision. |
 | `FastStateSerializer.toBinary(snapshot)` | Encodes state snapshot into a compact FastBinary payload. |
 | `FastStateSerializer.fromBinary(bytes)` | Restores blackboard state from binary bytes. |
-
----
-
-## Quick Start
-
-```java
-import fastaistate.*;
-
-public class Example {
-    public static void main(String[] args) {
-        FastBlackboard blackboard = FastAIState.of("workflow-task-1");
-
-        // 1. Reactive listener
-        blackboard.addListener("agent_status", (key, oldVal, newVal) -> {
-            System.out.println("Status changed: " + newVal.value());
-        });
-
-        // 2. Write state
-        blackboard.set("agent_status", "PLANNING");
-
-        // 3. Atomic CAS update
-        long ver = blackboard.getEntry("agent_status").version();
-        blackboard.compareAndSet("agent_status", ver, "EXECUTING");
-
-        // 4. Compact Binary Snapshot
-        byte[] binary = FastStateSerializer.toBinary(blackboard.snapshot());
-        FastBlackboard restored = FastStateSerializer.fromBinary(binary);
-    }
-}
-```
 
 ---
 
