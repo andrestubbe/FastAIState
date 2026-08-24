@@ -96,7 +96,7 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
 
 ## Installation
 
-### JitPack (Maven)
+### Option 1: Maven (JitPack)
 
 ```xml
 <repositories>
@@ -112,14 +112,76 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
         <artifactId>FastAIState</artifactId>
         <version>0.1.0</version>
     </dependency>
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>FastBinary</artifactId>
+        <version>0.1.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>fastcore</artifactId>
+        <version>0.1.0</version>
+    </dependency>
 </dependencies>
 ```
+
+### Option 2: Gradle (via JitPack)
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.andrestubbe:FastAIState:0.1.0'
+    implementation 'com.github.andrestubbe:FastBinary:0.1.0'
+    implementation 'com.github.andrestubbe:fastcore:0.1.0'
+}
+```
+
+### Option 3: Direct Download (No Build Tool)
+
+Download the latest JARs directly to add them to your classpath:
+
+1. 🧠 **[FastAIState-0.1.0.jar](https://github.com/andrestubbe/FastAIState/releases/download/0.1.0/FastAIState-0.1.0.jar)** (Shared Blackboard Engine)
+2. ⚡ **[FastBinary-0.1.0.jar](https://github.com/andrestubbe/FastBinary/releases/download/0.1.0/FastBinary-0.1.0.jar)** (VarInt & Binary Packing)
+3. ⚙️ **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (Foundation Library)
+
+---
+
+## Documentation
+
+* **[REFERENCE.md](docs/REFERENCE.md)**: Full API reference and method signatures.
+* **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: Architectural design principles and lock-free goals.
+* **[CHANGELOG.md](docs/CHANGELOG.md)**: Release history and version notes.
+* **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
+* **[COMPILE.md](docs/COMPILE.md)**: Instructions for compiling from source.
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|---|---|
+| Windows 10/11 (x64) | ✅ Fully Supported |
+| Linux | ✅ Fully Supported |
+| macOS | ✅ Fully Supported |
 
 ---
 
 ## License
 
 MIT License. See [LICENSE](LICENSE) file for details.
+
+---
+
+## Related Projects
+
+- [FastAI](https://github.com/andrestubbe/FastAI) — Unified AI client interface for Java
+- [FastAIAgent](https://github.com/andrestubbe/FastAIAgent) — Autonomous agent loop, intent-graphs, and tool execution
+- [FastAIRuntime](https://github.com/andrestubbe/FastAIRuntime) — Sandboxed process runner and FastAIEventBus pipeline
+- [FastBinary](https://github.com/andrestubbe/FastBinary) — Zero-bloat VarInt encoding and bitstream packing
+- [FastCore](https://github.com/andrestubbe/FastCore) — Unified JNI loader and platform abstraction
 
 ---
 
