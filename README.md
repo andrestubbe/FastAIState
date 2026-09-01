@@ -1,3 +1,6 @@
+> [!WARNING]
+> **🚧 WIP — Active AI Pipeline Construction & Architecture Optimization in Progress.**
+
 # FastAIState 0.1.2 [ALPHA] — Lock-Free Shared Blackboard & Agent State for Java
 
 [![Status](https://img.shields.io/badge/status-0.1.2-brightgreen.svg)](https://github.com/andrestubbe/FastAIState/releases/tag/0.1.2)
