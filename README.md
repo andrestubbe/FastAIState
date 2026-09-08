@@ -15,6 +15,8 @@
 
 **FastAIState** provides a shared blackboard coordination memory for multi-agent execution graphs, automated task pipelines, and tool execution environments. It eliminates prompt context stuffing by offering a lock-free, thread-safe, observable key-value store with atomic CAS (Compare-And-Swap), delta tracking, and zero-allocation binary serialization via **[FastFileFormat](https://github.com/andrestubbe/FastFileFormat)** & **[FastBinary](https://github.com/andrestubbe/FastBinary)**.
 
+[Watch Demo (YouTube)] | [Watch JMH Benchmark (Youtube)]
+
 ---
 
 ## Quick Start
