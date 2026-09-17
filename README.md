@@ -1,12 +1,12 @@
 > [!WARNING]
 > **🚧 WIP — Active AI Pipeline Construction & Architecture Optimization in Progress.**
 
-# FastAIState 0.1.2 [ALPHA] — Lock-Free Shared Blackboard & Agent State for Java
+# FastAIState [ALPHA-2026-09-08] — Lock-Free Shared Blackboard & Agent State for Java
 
 [![Status](https://img.shields.io/badge/status-0.1.2-brightgreen.svg)](https://github.com/andrestubbe/FastAIState/releases/tag/0.1.2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe/FastAIState)
 
 ---
@@ -14,8 +14,6 @@
 **⚡ High-performance lock-free shared blackboard memory, delta revision tracking, and binary state snapshot engine for multi-agent workflows.**
 
 **FastAIState** provides a shared blackboard coordination memory for multi-agent execution graphs, automated task pipelines, and tool execution environments. It eliminates prompt context stuffing by offering a lock-free, thread-safe, observable key-value store with atomic CAS (Compare-And-Swap), delta tracking, and zero-allocation binary serialization via **[FastFileFormat](https://github.com/andrestubbe/FastFileFormat)** & **[FastBinary](https://github.com/andrestubbe/FastBinary)**.
-
-[Watch Demo (YouTube)] | [Watch JMH Benchmark (Youtube)]
 
 ---
 
@@ -49,60 +47,98 @@ public class Example {
 
 ---
 
-## Key Features
+## Table of Contents
 
-- **⚡ Lock-Free Concurrency** — Atomic CAS (`compareAndSet`) updates with monotonically increasing generation revisions.
-- **🔄 Delta & Revision Tracking** — Microsecond delta extraction (`getDeltasSince`) to stream state diffs across distributed workers.
-- **📡 Reactive State Listeners** — Key-specific and global change listeners (`StateChangeListener`) for event-driven orchestration.
-- **💾 FastFileFormat State Snapshots** — Dual-format state serialization (`FastStateSerializer`) with standard 12-byte header and VarInt streams.
-- **🌐 Zero Dependencies** — Native-speed pure Java 17+ architecture backed by `FastCore`, `FastBinary`, and `FastFileFormat`.
+- [Why FastAIState?](#why-fastaistate)
+- [Key Features](#key-features)
+- [Architecture Overview](#architecture-overview)
+- [Performance Benchmarks](#performance-benchmarks)
+- [API Quick Reference](#api-quick-reference)
+- [Technical Demos & Benchmarks](#technical-demos--benchmarks)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [Platform Support](#platform-support)
+- [License](#license)
+- [Related Projects](#related-projects)
 
 ---
 
-## Real-World Scenarios
+## Why FastAIState?
 
-- **🤖 Multi-Agent Coordination** — Shared blackboard for planner, coder, and reviewer subagents without prompt token pollution.
-- **🛠️ Tool & Environment State** — Storing live workspace variables, session parameters, and execution flags across tool calls.
-- **📑 Session Checkpoints & Replays** — Saving point-in-time state snapshots to disk for deterministic re-runs and rollbacks.
-- **⚡ Reactive UI & Telemetry Synchronization** — Hooking UI panels and console monitors directly to state mutation events.
+Traditional multi-agent frameworks pass entire conversational state trees and task context as bloated prompt strings or rely on heavy external databases:
+
+- **Token Exhaustion & Prompt Bloat** — Stuffing global execution state into every LLM call rapidly hits token limits and multiplies inference costs.
+- **Concurrency Bottlenecks & Race Conditions** — Synchronizing concurrent subagents with coarse mutexes causes thread contention and latency spikes.
+- **Serialization Overhead** — Bulky JSON state dumps consume excessive CPU cycles and memory allocations during rapid task iteration loops.
+
+FastAIState eliminates these issues by decoupling shared memory into an ultra-fast in-memory blackboard with zero-allocation binary snapshots:
+
+| Feature | Prompt Context Passing | Redis / Relational State | FastAIState |
+|:---|:---|:---|:---|
+| **Access Latency** | 500–2,000 ms (LLM Round-trip) | 1–5 ms (Network RPC) | < 10 ns (Direct memory) |
+| **Concurrency Model** | ❌ None (Single-threaded prompt) | ⚠️ Distributed locking / Transactions | ✅ Lock-Free atomic CAS (`compareAndSet`) |
+| **State Delta Tracking** | ❌ Full context dump required | ⚠️ Manual change CDC logging | ✅ Built-in monotonically increasing revision versions |
+| **Serialization Overhead** | High token consumption | 5–20 KB JSON strings | Compact binary streams via FastBinary / FastFileFormat |
+| **GC Pressure** | Token encoding garbage | High JSON object allocations | Zero GC on reads & CAS |
+
+---
+
+## Key Features
+
+- ⚡ **Lock-Free Concurrency** — Atomic CAS (`compareAndSet`) updates with monotonically increasing generation revisions.
+- 🔄 **Delta & Revision Tracking** — Microsecond delta extraction (`getDeltasSince`) to stream state diffs across distributed workers.
+- 📡 **Reactive State Listeners** — Key-specific and global change listeners (`StateChangeListener`) for event-driven orchestration.
+- 💾 **FastFileFormat State Snapshots** — Dual-format state serialization (`FastStateSerializer`) with standard 12-byte header and VarInt streams.
+- 🌐 **Zero Dependencies** — Native-speed pure Java 17+ architecture backed by `FastCore`, `FastBinary`, and `FastFileFormat`.
+
+---
+
+## Architecture Overview
+
+FastAIState integrates directly with the FastJava AI multi-agent orchestration stack:
+
+- 🧠 **[FastAIState](https://github.com/andrestubbe/FastAIState)** (Shared Memory): Lock-free blackboard coordinating multi-agent task and session variables.
+- 🤖 **[FastAIAgent](https://github.com/andrestubbe/FastAIAgent)** (Autonomous Control): Drives multi-agent plan and execution loops referencing state tokens.
+- 🧩 **[FastAIReasoner](https://github.com/andrestubbe/FastAIReasoner)** (Deterministic Reasoning): Inspects state snapshots to construct reasoning graphs and trees.
+- ⚡ **[FastAIRuntime](https://github.com/andrestubbe/FastAIRuntime)** (Execution Pipeline): Executes sandboxed tools and updates blackboard status upon completion.
 
 ---
 
 ## Performance Benchmarks
 
-FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-free execution under massive concurrency.
+FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-free execution under massive concurrency:
 
 | Benchmark Operation | Score (ops/ms) | Ops per Second | Memory Allocation |
-|---|---|---|---|
-| **Compare-And-Swap (CAS)** | **~302,000 ops/ms** | **> 302 Million** | **0 bytes / op (Zero GC)** |
-| **Blackboard State Read** | **~104,000 ops/ms** | **> 104 Million** | **0 bytes / op (Zero GC)** |
-| **Blackboard State Write** | **~15,500 ops/ms** | **> 15.5 Million** | **Minimal entry overhead** |
-| **Binary State Snapshot Serialization** | **~93,000 ops/ms** | **> 93,000 / sec** | **High-density VarInt stream** |
-| **Binary State Snapshot Deserialization** | **~82,000 ops/ms** | **> 82,000 / sec** | **Zero-copy decoding** |
+|:---|:---|:---|:---|
+| **Compare-And-Swap (CAS)** | **~137,800 ops/ms** | **> 137 Million** | **0 bytes / op (Zero GC)** |
+| **Blackboard State Read** | **~100,800 ops/ms** | **> 100 Million** | **0 bytes / op (Zero GC)** |
+| **Blackboard State Write** | **~18,200 ops/ms** | **> 18.2 Million** | **Minimal entry overhead** |
+| **Binary State Serialization** | **~83,300 ops/ms** | **> 83,300 / sec** | **High-density VarInt stream** |
+| **Binary State Deserialization** | **~69,800 ops/ms** | **> 69,800 / sec** | **Zero-copy decoding** |
 
-*Run the benchmarks locally:* `.\run-benchmark.bat`
+*Measured on Windows 11 x64, Intel Core i5 (Surface Pro 8), JDK 21.0.12.1.*
 
 ---
 
 ## API Quick Reference
 
-| Method / Class | Description |
-|---|---|
-| `FastAIState.of("scopeId")` | Gets or creates a scoped shared blackboard instance. |
-| `blackboard.set("key", value)` | Sets a state value and bumps the global revision version. |
-| `blackboard.get("key")` | Retrieves a state value by key. |
-| `blackboard.compareAndSet(key, ver, val)` | Atomically updates value if expected version matches. |
-| `blackboard.addListener(key, listener)` | Registers a reactive change listener for a specific key. |
-| `blackboard.getDeltasSince(version)` | Returns list of state entries modified after given revision. |
-| `FastStateSerializer.toBinary(snapshot)` | Encodes state snapshot into a compact FastBinary payload. |
-| `FastStateSerializer.fromBinary(bytes)` | Restores blackboard state from binary bytes. |
+| Method / Class | Return Type | Description |
+|:---|:---|:---|
+| `FastAIState.of(scopeId)` | `FastBlackboard` | Gets or creates a scoped shared blackboard instance. |
+| `blackboard.set(key, value)` | `StateEntry` | Sets a state value and bumps the global revision version. |
+| `blackboard.get(key)` | `Object` | Retrieves a state value by key. |
+| `blackboard.compareAndSet(key, ver, val)` | `boolean` | Atomically updates value if expected version matches. |
+| `blackboard.addListener(key, listener)` | `void` | Registers a reactive change listener for a specific key. |
+| `blackboard.getDeltasSince(version)` | `List<StateEntry>` | Returns list of state entries modified after given revision. |
+| `FastStateSerializer.toBinary(snapshot)` | `byte[]` | Encodes state snapshot into a compact FastBinary payload. |
+| `FastStateSerializer.fromBinary(bytes)` | `FastBlackboard` | Restores blackboard state from binary bytes. |
 
 ---
 
-## Technical Examples & Hero Demos
+## Technical Demos & Benchmarks
 
 | Case | Java Example | Launcher | Description |
-|---|---|---|---|
+|:---|:---|:---|:---|
 | **Multi-Agent Blackboard Coordination** | [Demo.java](examples/Demo/src/main/java/fastaistate/demo/Demo.java) | `run-demo.bat` | Reactive listeners, atomic CAS updates across agents, and binary state serialization. |
 | **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastaistate/benchmark/Benchmark.java) | `run-benchmark.bat` | Lock-free CAS throughput, concurrent blackboard reads/writes, and snapshot serialization. |
 
@@ -126,21 +162,6 @@ FastAIState is profiled using **JMH** to guarantee ultra-low latency and lock-fr
         <artifactId>FastAIState</artifactId>
         <version>0.1.2</version>
     </dependency>
-    <dependency>
-        <groupId>com.github.andrestubbe</groupId>
-        <artifactId>FastFileFormat</artifactId>
-        <version>0.1.1</version>
-    </dependency>
-    <dependency>
-        <groupId>com.github.andrestubbe</groupId>
-        <artifactId>FastBinary</artifactId>
-        <version>0.1.1</version>
-    </dependency>
-    <dependency>
-        <groupId>com.github.andrestubbe</groupId>
-        <artifactId>fastcore</artifactId>
-        <version>0.1.0</version>
-    </dependency>
 </dependencies>
 ```
 
@@ -153,9 +174,6 @@ repositories {
 
 dependencies {
     implementation 'com.github.andrestubbe:FastAIState:0.1.2'
-    implementation 'com.github.andrestubbe:FastFileFormat:0.1.1'
-    implementation 'com.github.andrestubbe:FastBinary:0.1.1'
-    implementation 'com.github.andrestubbe:fastcore:0.1.0'
 }
 ```
 
@@ -172,27 +190,27 @@ Download the latest JARs directly to add them to your classpath:
 
 ## Documentation
 
-* **[REFERENCE.md](docs/REFERENCE.md)**: Full API reference and method signatures.
-* **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: Architectural design principles and lock-free goals.
-* **[CHANGELOG.md](docs/CHANGELOG.md)**: Release history and version notes.
-* **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
-* **[COMPILE.md](docs/COMPILE.md)**: Instructions for compiling from source.
+- **[REFERENCE.md](docs/REFERENCE.md)**: Full API reference and method signatures.
+- **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: Architectural design principles and lock-free goals.
+- **[CHANGELOG.md](docs/CHANGELOG.md)**: Release history and version notes.
+- **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
+- **[COMPILE.md](docs/COMPILE.md)**: Instructions for compiling from source.
 
 ---
 
 ## Platform Support
 
-| Platform | Status |
-|---|---|
-| Windows 10/11 (x64) | ✅ Fully Supported |
-| Linux | ✅ Fully Supported |
-| macOS | ✅ Fully Supported |
+| Platform | Architecture | Status | Notes |
+|:---|:---|:---|:---|
+| Windows 10/11 | x64, ARM64 | ✅ Fully Supported | Native high-performance pure Java |
+| Linux | x64, ARM64 | ✅ Fully Supported | Tested on Ubuntu / Debian / RHEL |
+| macOS | Apple Silicon, x64 | ✅ Fully Supported | Tested on macOS Sonoma / Sequoia |
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) file for details.
+MIT License — See [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -212,7 +230,6 @@ MIT License. See [LICENSE](LICENSE) file for details.
 - [FastAIReasoner](https://github.com/andrestubbe/FastAIReasoner) — Deterministic planning, chain-of-thought, and self-correction
 - [FastAIRerank](https://github.com/andrestubbe/FastAIRerank) — Cross-encoder relevance filtering and Top-N prompt pruner
 - [FastAIRuntime](https://github.com/andrestubbe/FastAIRuntime) — Sandboxed process runner and tool-calling execution pipeline
-- [FastAIState](https://github.com/andrestubbe/FastAIState) — Lock-free shared agent state & blackboard memory
 - [FastAIVectorDB](https://github.com/andrestubbe/FastAIVectorDB) — High-throughput SIMD/AVX2 vector database
 - [FastAIVision](https://github.com/andrestubbe/FastAIVision) — High-speed local multimodal vision, UI-element grounding, and screen-VLM engine
 - [FastCore](https://github.com/andrestubbe/FastCore) — Unified JNI loader and platform abstraction

@@ -2,14 +2,24 @@
 setlocal
 cd /d "%~dp0"
 echo ===================================================
-echo  Building FastAIState & Running Interactive Demo
+echo  FastAIState Demo
 echo ===================================================
-
-call "C:\Users\andre\tools\apache-maven-3.9.9\bin\mvn.cmd" compile
+echo [1/3] Building FastAIState...
+call "C:\Users\andre\tools\apache-maven-3.9.9\bin\mvn.cmd" install -DskipTests
 if %ERRORLEVEL% NEQ 0 (
-    echo Build failed!
+    echo FastAIState build failed!
     exit /b %ERRORLEVEL%
 )
 
-java -cp "target\classes;examples\Demo\src\main\java;%USERPROFILE%\.m2\repository\com\github\andrestubbe\fastcore\0.1.0\fastcore-0.1.0.jar;%USERPROFILE%\.m2\repository\com\github\andrestubbe\FastBinary\0.1.0\FastBinary-0.1.0.jar" fastaistate.demo.Demo
+echo [2/3] Compiling Demo...
+cd examples\Demo
+call "C:\Users\andre\tools\apache-maven-3.9.9\bin\mvn.cmd" compile
+if %ERRORLEVEL% NEQ 0 (
+    echo Demo compilation failed!
+    exit /b %ERRORLEVEL%
+)
+
+echo [3/3] Running Demo...
+call "C:\Users\andre\tools\apache-maven-3.9.9\bin\mvn.cmd" exec:java "-Dexec.mainClass=fastaistate.demo.Demo"
+cd ..\..
 pause
